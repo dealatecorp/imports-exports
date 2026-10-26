@@ -1,0 +1,1 @@
+{"indexes":[],"fieldOverrides":[{"collectionGroup":"harbor_private","fieldPath":"snapshot","indexes":[]},{"collectionGroup":"chunks","fieldPath":"bytes","indexes":[]}]}

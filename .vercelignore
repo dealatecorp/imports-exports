@@ -1,0 +1,12 @@
+.git
+.next
+.firebase-cli-cache
+.firebase
+data
+node_modules
+.env*
+docs/*.png
+prd_qa
+*.docx
+*.tsbuildinfo
+firebase-debug*.log

@@ -36,7 +36,7 @@ export function fieldsFor(action:string,L:Row):Field[]{
  'user-active':[opts('active','Account active',['true','false'])],
  settings:[opts('setting','Setting',['timezone','staleHours','requireStaging','requiredDocuments']),f('value','Value'),reason],
  'mfa-enroll':[f('secret','32-character base32 authenticator secret'),f('code','Current authenticator code'),f('password','Current password','password')],
- document:[sh,opts('type','Document type',['Packing List','Invoice','Bill of Lading','Loading Photo','Other']),f('file','PDF PNG or JPEG up to 10 MB','file'),opts('restricted','Managers only',['false','true'])],
+ document:[sh,opts('type','Document type',['Packing List','Invoice','Bill of Lading','Loading Photo','Other']),f('file','PDF, PNG or JPEG (up to 1 MB online; 10 MB locally)','file'),opts('restricted','Managers only',['false','true'])],
  alert:[opts('status','Alert status',['Acknowledged','Closed','Escalated'])]
  };
  return defs[action]||[reason];

@@ -6,3 +6,14 @@ data/
 coverage/
 *.tsbuildinfo
 prd_qa/
+
+.firebase-cli-cache/
+.firebase/
+firebase-debug*.log
+firestore-debug*.log
+ui-debug*.log
+.env.*
+!.env.example
+.vercel/
+
+.vercel

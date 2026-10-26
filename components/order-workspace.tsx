@@ -23,7 +23,7 @@ export function OrderWorkspace({store:s,user:u,id,selectedContainer}:{store:Stor
    <div className="order-progress-track" role="progressbar" aria-label={o.display_name+' progress'} aria-valuemin={0} aria-valuemax={steps.length-1} aria-valuenow={o.step} aria-valuetext={steps[o.step]}><span style={{width:`${o.step/(steps.length-1)*100}%`}}/></div>
    <div className="order-timeline">{steps.map((step,i)=><div className={i<=o.step?'done':''} key={step} aria-current={i===o.step?'step':undefined}><span>{i+1}</span>{step}</div>)}</div>
    {review.unloaded&&o.status!=='Completed'&&<div className="notice"><h3>Waiting to receive</h3><ReceiveOrder key={review.version} orderId={id} version={review.version} csrf={u.csrf} employee={{id:u.id,name:u.name,email:u.email}} blockedReason={review.reason}/></div>}
-   <CustomerContact store={s} orderId={id}/>
+   {CustomerContact({store:s,orderId:id})}
    <p className="muted">Progress covers the whole order. Separate containers may be at different stages.</p>
    <p className="notice" hidden={!locked}>The ordered quantities have already been sent, handed over or received. Adding items and containers is locked. You can still view its documents and history.</p>{containersLocked&&!locked&&<p className="notice">This order has been sent. New containers cannot be added.</p>}<nav className="workspace-jumps" aria-label={o.display_name+' sections'}><a href={'#items-'+id}>1. Order items</a><a href={'#shipping-'+id}>2. Shipping & containers</a><a href={'#updates-'+id}>3. Documents & updates</a></nav>
   </section>

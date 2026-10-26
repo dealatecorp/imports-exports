@@ -1,3 +1,4 @@
+import {withCloudStore} from '@/lib/cloud-store';
 import {CustomerOrders} from '@/components/customer-orders';
 import {CARGO_RULES} from '@/lib/cargo-rules';
 import {ReceiveOrder} from '@/components/receive-order';
@@ -35,7 +36,7 @@ function Badge({value}:{value:unknown}){const t=String(value??'—');const color
 
 function fmt(v:unknown,k:string,tz:string){if(v==null||v==='')return '—';if(qtyKeys.has(k))return units(Number(v)).toLocaleString('en-IN',{maximumFractionDigits:6});if(['created','due','eta','updated','event_time','recorded','departure','original_eta'].includes(k))return new Date(String(v)).toLocaleString('en-IN',{timeZone:tz,month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'});if(['lot_enabled','archived','active','mfa_enabled'].includes(k))return Number(v)?'Yes':'No';return ['state','status','stage','kind','direction','scan'].includes(k)?displayValue(v):String(v);}
 
-export default async function Page({params,searchParams}:{params:Promise<{view:string}>;searchParams:Promise<Record<string,string|undefined>>}){
+async function Page({params,searchParams}:{params:Promise<{view:string}>;searchParams:Promise<Record<string,string|undefined>>}){
 
  const {view}=await params,filter=await searchParams;if(!titles[view])notFound();let u:Row;try{u=await user();}catch(e){if(e instanceof Fault&&e.status===401)redirect('/login');throw e;}const s=db();if(['settings','users','audit'].includes(view)&&u.role!=='manager')return <Shell name={u.name} role={u.role} csrf={u.csrf}><h1>Manager access required</h1><Link href="/overview">Return to overview</Link></Shell>;
 
@@ -101,7 +102,7 @@ export default async function Page({params,searchParams}:{params:Promise<{view:s
 
   manager(u);content=<><div className="action-bar">{action('settings','Change settings')}{action('mfa-enroll','Set up sign-in verification')}</div><section className="panel prose"><h2>Operational policies</h2><dl className="detail-grid">{Object.entries(L.settings).map(([k,v])=><div key={k}><dt>{displayValue(k)}</dt><dd>{displayValue(v)}</dd></div>)}</dl><h2>Manager multi-factor authentication</h2><p>Use an authenticator app with a securely generated 32-character base32 secret. Configure MFA_ENCRYPTION_KEY on the server before enrollment. Enter the secret and current code in Set up sign-in verification. Enrollment revokes existing sessions.</p><h2>Private document scanning</h2><p>Uploads require a clean scanner result before downloads are allowed. If no scanner is configured, files remain quarantined and required-document dispatch gates remain blocked.</p></section></>;
 
- }else if(view==='customer-orders')content=<CustomerOrders store={s} user={u}/>;
+ }else if(view==='customer-orders')content=CustomerOrders({store:s,user:u});
  else if(view==='search')content=<>{toolbar()}<h2>Orders</h2>{table('orders',filter,true)}<h2>Shipments</h2>{table('shipments',filter,true)}<h2>Products</h2>{table('products',filter,true)}<h2>Containers and items</h2>{table('allocations',filter,true)}</>;
 
  else if(view==='shipments'){
@@ -110,12 +111,12 @@ export default async function Page({params,searchParams}:{params:Promise<{view:s
   const direction=['export','import'].includes(filter.direction||'')?{direction:filter.direction}:{};
   content=<><div className="workspace-intro"><h2>Create an order</h2><p>Start with the customer and first item. Then add more items, shipping details and containers here.</p></div><ActionForm action="order" label="Order details & first item" csrf={u.csrf} employee={{id:u.id,name:u.name,email:u.email}} lookups={L} initial={direction} inline openOrder/><section className="panel prose"><h2>Next: shipping details, containers & progress</h2><p className="muted">Save the order above to unlock these sections in this workspace.</p></section></>;
  }else if(view==='orders'&&filter.id){
-  const o=list(s,u,'orders',{id:filter.id}).rows[0];if(!o)notFound();content=<OrderWorkspace store={s} user={u} id={o.id} selectedContainer={filter.container}/>;
+  const o=list(s,u,'orders',{id:filter.id}).rows[0];if(!o)notFound();content=OrderWorkspace({store:s,user:u,id:o.id,selectedContainer:filter.container});
  }else if(view==='orders'&&(filter.container||filter.transport)){
   let orderIds:string[]=[];
   if(filter.container){orderIds=containerOrders(s,u,filter.container).map(o=>o.id);}
   else if(filter.transport){const sh=shipment(s,u,filter.transport);orderIds=s.all(`SELECT order_id FROM order_shipments WHERE shipment_id=? UNION SELECT ol.order_id FROM allocations a JOIN order_lines ol ON ol.id=a.line_id JOIN containers c ON c.id=a.container_id WHERE c.shipment_id=? AND a.cancelled=0`,sh.id,sh.id).map(o=>o.order_id);}
-  content=<>{filter.container&&<section className="panel prose"><h2>{recordName(s,'containers',filter.container)}</h2><p>Orders and their full details for this container.</p></section>}{orderIds.filter(id=>!s.get('SELECT 1 FROM order_deletions WHERE order_id=?',id)).map(id=><OrderWorkspace key={id} store={s} user={u} id={id} selectedContainer={filter.container}/>)}{!orderIds.length&&<section className="panel prose"><h2>No order items assigned yet</h2><p>This container or transport does not have an order connected yet. Open an order and choose Use existing shipping details to connect it.</p><Link className="primary" href="/orders">Open orders</Link></section>}</>;
+  content=<>{filter.container&&<section className="panel prose"><h2>{recordName(s,'containers',filter.container)}</h2><p>Orders and their full details for this container.</p></section>}{orderIds.filter(id=>!s.get('SELECT 1 FROM order_deletions WHERE order_id=?',id)).map(id=><section key={id}>{OrderWorkspace({store:s,user:u,id,selectedContainer:filter.container})}</section>)}{!orderIds.length&&<section className="panel prose"><h2>No order items assigned yet</h2><p>This container or transport does not have an order connected yet. Open an order and choose Use existing shipping details to connect it.</p><Link className="primary" href="/orders">Open orders</Link></section>}</>;
  }else {
 
   const actual=view==='exports'||view==='imports'?'orders':view;const filtered={...filter,...(view==='exports'?{direction:'export'}:view==='imports'?{direction:'import'}:{})};
@@ -126,7 +127,9 @@ export default async function Page({params,searchParams}:{params:Promise<{view:s
 
  }
 
- return <Shell name={u.name} role={u.role} csrf={u.csrf}><div className={view==='overview'?'page-heading overview-hidden':'page-heading'}><div><div className="eyebrow">{view==='overview'?'YOUR DAILY OPERATIONS':'HARBOR WORKSPACE'}</div><h1>{titles[view][0]}</h1><p>{titles[view][1]}</p></div><div className="heading-meta"><span className="tag">{s.get("SELECT value FROM settings WHERE key='demo'")?'DEMO DATA':'LIVE WORKSPACE'}</span><span><Clock size={13}/> {new Date().toLocaleDateString('en-IN',{timeZone:tz,day:'numeric',month:'long',year:'numeric'})}</span></div></div>{view==='overview'&&<CustomerOrders store={s} user={u} compact/>}{content}<p className="refresh-note">Updated {new Date().toLocaleTimeString('en-IN',{timeZone:tz})} · {tz}</p></Shell>;
+ return <Shell name={u.name} role={u.role} csrf={u.csrf}><div className={view==='overview'?'page-heading overview-hidden':'page-heading'}><div><div className="eyebrow">{view==='overview'?'YOUR DAILY OPERATIONS':'HARBOR WORKSPACE'}</div><h1>{titles[view][0]}</h1><p>{titles[view][1]}</p></div><div className="heading-meta"><span className="tag">{s.get("SELECT value FROM settings WHERE key='demo'")?'DEMO DATA':'LIVE WORKSPACE'}</span><span><Clock size={13}/> {new Date().toLocaleDateString('en-IN',{timeZone:tz,day:'numeric',month:'long',year:'numeric'})}</span></div></div>{view==='overview'&&CustomerOrders({store:s,user:u,compact:true})}{content}<p className="refresh-note">Updated {new Date().toLocaleTimeString('en-IN',{timeZone:tz})} · {tz}</p></Shell>;
 
 }
 
+
+export default function CloudPage(props:Parameters<typeof Page>[0]){return withCloudStore(()=>Page(props));}

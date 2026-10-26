@@ -2,6 +2,8 @@ import { DatabaseSync, type SQLInputValue } from 'node:sqlite';
 import { mkdirSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { randomUUID, createHash } from 'node:crypto';
+import {AsyncLocalStorage} from 'node:async_hooks';
+export const requestStore=new AsyncLocalStorage<Store>();
 
 export type Row = Record<string, any>;
 export const id = () => randomUUID();
@@ -77,7 +79,7 @@ CREATE TRIGGER IF NOT EXISTS immutable_audit_update BEFORE UPDATE ON audit BEGIN
 CREATE TRIGGER IF NOT EXISTS immutable_audit_delete BEFORE DELETE ON audit BEGIN SELECT RAISE(ABORT,'Audit history is immutable'); END;
 `;
 const globalStore=globalThis as unknown as {harbor?:Store};
-export function db(){if(!globalStore.harbor){globalStore.harbor=new Store();globalStore.harbor.migrate();}else if(Object.getPrototypeOf(globalStore.harbor)!==Store.prototype){Object.setPrototypeOf(globalStore.harbor,Store.prototype);globalStore.harbor.migrate();}return globalStore.harbor;}
+export function db(){const scoped=requestStore.getStore();if(scoped)return scoped;if(process.env.DATABASE_BACKEND==='firestore')throw new Fault('Cloud database request context is required',503);if(!globalStore.harbor){globalStore.harbor=new Store();globalStore.harbor.migrate();}else if(Object.getPrototypeOf(globalStore.harbor)!==Store.prototype){Object.setPrototypeOf(globalStore.harbor,Store.prototype);globalStore.harbor.migrate();}return globalStore.harbor;}
 export function audit(s:Store,actor:string,action:string,entity:string,detail:unknown){s.run('INSERT INTO audit VALUES(?,?,?,?,?,?)',id(),actor,action,entity,JSON.stringify(detail),now());}
 export const hash=(text:string)=>createHash('sha256').update(text).digest('hex');
 export function manager(u:Row){if(u.role!=='manager')throw new Fault('Manager permission required',403);}
