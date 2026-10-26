@@ -1,0 +1,3 @@
+sku,warehouse,location,unit,quantity,state,lot
+TXT-001,Mumbai Gateway,A-01,carton,80,Available,
+TXT-001,Mumbai Gateway,A-01,carton,20,Blocked,

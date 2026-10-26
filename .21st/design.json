@@ -1,0 +1,23 @@
+{
+  "name": "HarborTrack",
+  "tokens": {
+    "background": "#eeefef",
+    "panel": "#f9f9f9",
+    "accent": "#ff6b12",
+    "text": "#202224",
+    "radius": 16
+  },
+  "decisions": [
+    "Follow user-supplied FleetTrack desktop and mobile Instagram references viewed in authorised browser",
+    "Compact top navigation with full navigation drawer",
+    "White panels and orange container hero; mobile two-column summary and stacked cargo detail",
+    "Keep operational numbers backed by database records",
+    "Order-first dashboard selector: one card per order, updating progress, items and all connected containers",
+    "Order workspace combines item entry, shipping details, containers, documents, progress and receiving without separate shipment navigation",
+    "Waiting to receive uses an inline confirmation checkbox and submit button; completion is validated on the server"
+  ],
+  "references": [
+    "https://www.instagram.com/p/DeMzRuolDsY/",
+    "https://www.instagram.com/p/De7GJHyFGT0/"
+  ]
+}
