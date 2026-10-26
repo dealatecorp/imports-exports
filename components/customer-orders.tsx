@@ -1,0 +1,15 @@
+import Link from 'next/link';
+import {Store,Row} from '@/lib/db';
+import {scope,recordName,orderTimeline} from '@/lib/queries';
+import {ORDER_STEPS} from '@/lib/order-steps';
+import {money} from '@/lib/customer-pricing';
+import {WHATSAPP_SENDER,whatsappLink} from '@/lib/customer-events';
+export function CustomerOrders({store:s,user:u,compact=false}:{store:Store;user:Row;compact?:boolean}){
+ const scoped=scope(s,u,'b');const rows=s.all(`SELECT b.*,c.name AS customer_name,c.phone,c.whatsapp FROM customer_bookings b JOIN customers c ON c.id=b.customer_id WHERE ${scoped.sql} AND NOT EXISTS(SELECT 1 FROM order_deletions od WHERE od.order_id=b.order_id) ORDER BY b.created DESC LIMIT ?`,...scoped.params,compact?5:100);
+ return <section className="panel prose"><div className="section-heading"><div><h2>Customer orders</h2><p>Paid demo bookings are ready for shipping details and container assignment.</p></div>{compact&&<Link className="secondary" href="/customer-orders">View all customer orders</Link>}</div>{!rows.length?<p>No customer bookings yet.</p>:<div className="table-wrap"><table><thead><tr>{['Order','Customer','Route','Items','Demo charge','Progress','Action'].map(x=><th key={x}>{x}</th>)}</tr></thead><tbody>{rows.map(b=>{const order=b.order_id?s.get('SELECT * FROM orders WHERE id=?',b.order_id):null;return <tr key={b.id}><td>{order?recordName(s,'orders',order.id):'Booking '+b.id.slice(0,8)}</td><td>{b.customer_name}</td><td>{b.origin} → {b.destination}</td><td>{JSON.parse(b.items).map((i:Row)=>`${i.name} — ${i.quantity/1e6} ${i.unit}`).join('; ')}</td><td>{money(b.total)}<br/>{b.status}</td><td>{order?ORDER_STEPS[orderTimeline(s,order)]:b.status}</td><td>{order?<Link className="secondary" href={'/orders?id='+order.id}>Manage order & containers</Link>:'Waiting for customer checkout'}</td></tr>;})}</tbody></table></div>}</section>;
+}
+export function CustomerContact({store:s,orderId}:{store:Store;orderId:string}){
+ const b=s.get('SELECT b.id,c.name,COALESCE(bc.phone,c.phone) AS phone,COALESCE(bc.whatsapp,c.whatsapp) AS whatsapp FROM customer_bookings b JOIN customers c ON c.id=b.customer_id LEFT JOIN customer_booking_contacts bc ON bc.booking_id=b.id WHERE b.order_id=?',orderId);if(!b)return null;
+ const updates=s.all('SELECT * FROM customer_updates WHERE booking_id=? ORDER BY rowid DESC LIMIT 8',b.id);
+ return <section className="customer-contact"><h3>Customer updates · {b.name}</h3><p>{b.phone} · Updates also appear in the customer dashboard.</p><p className="help">To send from {WHATSAPP_SENDER}, sign in to that number in WhatsApp or WhatsApp Web. Opening a draft does not send it.</p>{updates.map(update=><div className="customer-message" key={update.id}><p>{update.message}</p><small>{new Date(update.created).toLocaleString('en-IN',{timeZone:'Asia/Kolkata'})}</small>{b.whatsapp?<a className="secondary" target="_blank" rel="noopener noreferrer" href={whatsappLink(b.phone,update.message)}>Send WhatsApp update</a>:<p className="muted">Customer has not requested WhatsApp updates.</p>}</div>)}</section>;
+}

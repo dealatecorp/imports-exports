@@ -1,3 +1,4 @@
+import {recordCustomerChanges} from './customer-events';
 import {CARGO_GROUPS} from './cargo-rules';
 import {checkContainerItems} from './cargo-check';
 import {orderLocked,receiptReview,handedOver,transportStarted,orderContainersLocked,orderProgress} from './queries';
@@ -145,6 +146,7 @@ export function execute(s:Store,u:Row,raw:unknown):Row {
   }else if(action==='opening-import'){
    manager(u);const csv=z.string().max(1000000).parse(d.csv),preview=previewImport(s,u,csv);if(preview.errors.length)throw new Fault('Import contains invalid rows; nothing posted');const digest=hash(csv);if(s.get('SELECT id FROM import_batches WHERE digest=?',digest))throw new Fault('This batch was already posted',409);const batch=id();s.run('INSERT INTO import_batches VALUES(?,?,?,?,?)',batch,digest,u.id,preview.rows.length,now());for(const row of preview.rows)move(s,u,key,row.product_id,row.location_id,row.lot,row.state,row.quantity,'Opening',batch,reason);result={message:`Posted ${preview.rows.length} opening rows`,id:batch};
   }else {throw new Fault('Unknown operation');}
+  const whatsapp=recordCustomerChanges(s,action,d,result,key);if(whatsapp.length)result.whatsapp=whatsapp;
   audit(s,u.id,action,String(result.id||d.id||d.allocation_id||d.shipment_id||key),{reason,input:d});s.run('INSERT INTO operations VALUES(?,?,?,?,?)',key,u.id,digest,JSON.stringify(result),now());return result;
  });
 }

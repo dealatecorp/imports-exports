@@ -5,16 +5,17 @@ import {customerEvent} from './customer-events';
 import {orderTimeline,recordName} from './queries';
 import {ORDER_STEPS} from './order-steps';
 
-const quoteInput=z.object({key:z.string().min(8).max(120),route:z.string(),direction:z.enum(['import','export']),weight:z.coerce.number().positive().max(1000000),volume:z.coerce.number().positive().max(5000),packages:z.coerce.number().int().min(1).max(100000),service:z.enum(['standard','priority']),handling:z.enum(['normal','fragile','chilled']),due:z.string(),items:z.array(z.object({product_id:z.string(),quantity:z.string()})).min(1).max(30)});
+const quoteInput=z.object({key:z.string().min(8).max(120),route:z.string(),direction:z.enum(['import','export']),weight:z.coerce.number().positive().max(1000000),volume:z.coerce.number().positive().max(5000),packages:z.coerce.number().int().min(1).max(100000),service:z.enum(['standard','priority']),handling:z.enum(['normal','fragile','chilled']),due:z.string(),phone:z.string().trim().regex(/^\+[1-9]\d{7,14}$/, 'Enter a WhatsApp number with country code, such as +919876543210'),whatsapp:z.boolean(),items:z.array(z.object({product_id:z.string(),quantity:z.string()})).min(1).max(30)});
 export function createCustomerQuote(s:Store,c:Row,raw:unknown){
  const d=quoteInput.parse(raw);return s.tx(()=>{
  const prior=s.get('SELECT * FROM customer_bookings WHERE customer_id=? AND request_key=?',c.id,d.key);if(prior)return prior;
  const route=ROUTES.find(r=>r.id===d.route);if(!route)throw new Fault('Choose an available route');const warehouse=s.get('SELECT id FROM warehouses WHERE name=?',route.warehouse);if(!warehouse)throw new Fault('This route is not currently available');
  const due=Date.parse(d.due);if(!Number.isFinite(due)||due<Date.now()||due>Date.now()+365*86400000)throw new Fault('Choose a future needed-by date within one year');
  if(new Set(d.items.map(i=>i.product_id)).size!==d.items.length)throw new Fault('List each item once and combine its quantities');
- const items=d.items.map(i=>{const p=s.get('SELECT * FROM products WHERE id=? AND archived=0',i.product_id);if(!p)throw new Fault('Choose an existing active item');return {product_id:p.id,name:p.name,unit:p.unit,quantity:qty(i.quantity,p.precision)};});
- const quote=priceBooking(route,d.weight,d.volume,d.packages,d.service,d.handling),booking=id(),origin=d.direction==='export'?route.port:route.overseas,destination=d.direction==='export'?route.overseas:route.port;
+ const items=d.items.map(i=>{const p=s.get("SELECT p.*,COALESCE(g.cargo_group,'General goods') AS cargo_group FROM products p LEFT JOIN product_cargo_groups g ON g.product_id=p.id WHERE p.id=? AND p.archived=0",i.product_id);if(!p)throw new Fault('Choose an existing active item');return {product_id:p.id,name:p.name,unit:p.unit,cargo_group:p.cargo_group,quantity:qty(i.quantity,p.precision)};});
+ const quote=priceBooking(route,d.weight,d.volume,d.packages,d.service,d.handling,items.map(i=>({...i,quantity:i.quantity/1e6})),d.direction),booking=id(),origin=d.direction==='export'?route.port:route.overseas,destination=d.direction==='export'?route.overseas:route.port;
  s.run('INSERT INTO customer_bookings(id,customer_id,request_key,warehouse_id,direction,origin,destination,due,quote,items,total,created) VALUES(?,?,?,?,?,?,?,?,?,?,?,?)',booking,c.id,d.key,warehouse.id,d.direction,origin,destination,new Date(due).toISOString(),JSON.stringify(quote),JSON.stringify(items),quote.total,now());
+ s.run('INSERT INTO customer_booking_contacts VALUES(?,?,?)',booking,d.phone,d.whatsapp?1:0);
  customerEvent(s,booking,'quote:'+booking,'Your quote is ready. Complete demo checkout to submit your order. No real money will be charged.');return s.get('SELECT * FROM customer_bookings WHERE id=?',booking)!;
  });
 }
@@ -39,5 +40,6 @@ export function payDemoBooking(s:Store,c:Row,raw:unknown){
 export function customerBookings(s:Store,c:Row){return s.all('SELECT * FROM customer_bookings WHERE customer_id=? ORDER BY created DESC',c.id).map(b=>{
  const o=b.order_id?s.get('SELECT * FROM orders WHERE id=?',b.order_id):null,step=o?orderTimeline(s,o):0;
  const containers=o?s.all(`SELECT DISTINCT c.id,c.number,c.type FROM containers c JOIN allocations a ON a.container_id=c.id JOIN order_lines ol ON ol.id=a.line_id WHERE ol.order_id=? AND a.cancelled=0`,o.id).map(container=>({...container,name:recordName(s,'containers',container.id),items:s.all('SELECT p.name,p.unit,a.quantity FROM allocations a JOIN order_lines ol ON ol.id=a.line_id JOIN products p ON p.id=ol.product_id WHERE a.container_id=? AND ol.order_id=? AND a.cancelled=0',container.id,o.id)})):[];
- return {id:b.id,status:b.status,orderName:o?recordName(s,'orders',o.id):'Booking request',stage:o?ORDER_STEPS[step]:b.status,step,origin:b.origin,destination:b.destination,direction:b.direction,due:b.due,total:b.total,quote:JSON.parse(b.quote),items:JSON.parse(b.items),containers,updates:s.all('SELECT id,message,created FROM customer_updates WHERE booking_id=? ORDER BY rowid DESC',b.id)};
+ const contact=s.get('SELECT phone,whatsapp FROM customer_booking_contacts WHERE booking_id=?',b.id)||s.get('SELECT phone,whatsapp FROM customers WHERE id=?',c.id)!;
+ return {id:b.id,phone:contact.phone,whatsapp:contact.whatsapp,status:b.status,orderName:o?recordName(s,'orders',o.id):'Booking request',stage:o?ORDER_STEPS[step]:b.status,step,origin:b.origin,destination:b.destination,direction:b.direction,due:b.due,total:b.total,quote:JSON.parse(b.quote),items:o?s.all('SELECT p.name,p.unit,ol.quantity FROM order_lines ol JOIN products p ON p.id=ol.product_id WHERE ol.order_id=?',o.id):JSON.parse(b.items),containers,updates:s.all('SELECT id,message,created FROM customer_updates WHERE booking_id=? ORDER BY rowid DESC',b.id)};
  });}
