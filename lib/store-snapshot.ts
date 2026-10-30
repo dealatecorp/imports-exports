@@ -9,7 +9,7 @@ export function snapshot(s:Store){
 }
 export function encodeSnapshot(s:Store){
  const bytes=gzipSync(Buffer.from(JSON.stringify(snapshot(s))));
- if(bytes.length>850000)throw new Fault('The personal demo database is full. Export data before adding more records.',507);
+ if(bytes.length>850000)throw new Fault('The workspace storage is full. Export data before adding more records.',507);
  return bytes;
 }
 export function restoreSnapshot(bytes:Buffer){

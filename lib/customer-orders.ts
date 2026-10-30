@@ -16,11 +16,11 @@ export function createCustomerQuote(s:Store,c:Row,raw:unknown){
  const quote=priceBooking(route,d.weight,d.volume,d.packages,d.service,d.handling,items.map(i=>({...i,quantity:i.quantity/1e6})),d.direction),booking=id(),origin=d.direction==='export'?route.port:route.overseas,destination=d.direction==='export'?route.overseas:route.port;
  s.run('INSERT INTO customer_bookings(id,customer_id,request_key,warehouse_id,direction,origin,destination,due,quote,items,total,created) VALUES(?,?,?,?,?,?,?,?,?,?,?,?)',booking,c.id,d.key,warehouse.id,d.direction,origin,destination,new Date(due).toISOString(),JSON.stringify(quote),JSON.stringify(items),quote.total,now());
  s.run('INSERT INTO customer_booking_contacts VALUES(?,?,?)',booking,d.phone,d.whatsapp?1:0);
- customerEvent(s,booking,'quote:'+booking,'Your quote is ready. Complete demo checkout to submit your order. No real money will be charged.');return s.get('SELECT * FROM customer_bookings WHERE id=?',booking)!;
+ customerEvent(s,booking,'quote:'+booking,'Your quote is ready. Complete checkout to submit your order. No real money will be charged.');return s.get('SELECT * FROM customer_bookings WHERE id=?',booking)!;
  });
 }
 export function payDemoBooking(s:Store,c:Row,raw:unknown){
- if(process.env.APP_PRODUCTION==='true')throw new Fault('Demo checkout is disabled in production',403);
+ if(process.env.APP_PRODUCTION==='true')throw new Fault('Test checkout is disabled in production',403);
  const d=z.object({booking_id:z.string(),key:z.string().min(8).max(120),outcome:z.enum(['success','declined','cancelled'])}).parse(raw);
  return s.tx(()=>{
  const b=s.get('SELECT * FROM customer_bookings WHERE id=? AND customer_id=?',d.booking_id,c.id);if(!b)throw new Fault('Booking not found',404);
@@ -31,10 +31,10 @@ export function payDemoBooking(s:Store,c:Row,raw:unknown){
  if(d.outcome==='success'){
  const items:Row[]=JSON.parse(b.items);for(const item of items)if(!s.get('SELECT 1 FROM products WHERE id=? AND archived=0',item.product_id))throw new Fault('An item is no longer available. Request a new quote.');
  const order=id();s.run('INSERT INTO orders VALUES(?,?,?,?,?,?,?,?)',order,'WEB-'+b.id,b.direction,b.warehouse_id,c.name,b.destination,b.due,now());for(const item of items)s.run('INSERT INTO order_lines(id,order_id,product_id,quantity) VALUES(?,?,?,?)',id(),order,item.product_id,item.quantity);
- s.run("UPDATE customer_bookings SET order_id=?,status='Paid (demo)' WHERE id=?",order,b.id);customerEvent(s,b.id,'payment:'+payment,'Demo payment approved. '+recordName(s,'orders',order)+' is confirmed and ready for the operations team. No money was charged.');return {outcome:'success',order_id:order};
+ s.run("UPDATE customer_bookings SET order_id=?,status='Paid (demo)' WHERE id=?",order,b.id);customerEvent(s,b.id,'payment:'+payment,'Test payment approved. '+recordName(s,'orders',order)+' is confirmed and ready for the operations team. No money was charged.');return {outcome:'success',order_id:order};
  }
  if(d.outcome==='cancelled')s.run("UPDATE customer_bookings SET status='Cancelled' WHERE id=?",b.id);
- customerEvent(s,b.id,'payment:'+payment,d.outcome==='declined'?'Demo payment declined. You can retry checkout. No money was charged.':'Demo checkout cancelled. No money was charged.');return {outcome:d.outcome};
+ customerEvent(s,b.id,'payment:'+payment,d.outcome==='declined'?'Test payment declined. You can retry checkout. No money was charged.':'Checkout cancelled. No money was charged.');return {outcome:d.outcome};
  });
 }
 export function customerBookings(s:Store,c:Row){return s.all('SELECT * FROM customer_bookings WHERE customer_id=? ORDER BY created DESC',c.id).map(b=>{

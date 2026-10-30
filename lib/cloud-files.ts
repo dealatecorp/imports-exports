@@ -16,7 +16,7 @@ export function isCloudFile(path:string){return path.startsWith(PREFIX);}
 /** These writes must be staged in the same transaction as the order attachment record. */
 export function cloudFileWrites(key:string,bytes:Buffer){
  validateKey(key);
- if(!bytes.length||bytes.length>CLOUD_FILE_LIMIT)throw new Fault('Select a file up to 1 MB for the online demo',413);
+ if(!bytes.length||bytes.length>CLOUD_FILE_LIMIT)throw new Fault('Select a file up to 1 MB for the online workspace',413);
  const chunks=Array.from({length:Math.ceil(bytes.length/CHUNK_SIZE)},(_,index)=>Buffer.from(bytes.subarray(index*CHUNK_SIZE,(index+1)*CHUNK_SIZE)));
  const manifest:FileManifest={size:bytes.length,chunks:chunks.length,sha256:createHash('sha256').update(bytes).digest('hex')};
  return [{path:`harbor_files/${key}`,data:manifest},...chunks.map((bytes,index)=>({path:`harbor_files/${key}/chunks/${index}`,data:{bytes}}))];
@@ -31,7 +31,7 @@ export function assembleCloudFile(manifest:FileManifest|undefined,chunks:unknown
 }
 
 export async function readCloudFile(path:string,remote:Firestore=firebaseDatabase()){
- if(!isCloudFile(path))throw new Fault('This document has not been copied to the online demo',404);
+ if(!isCloudFile(path))throw new Fault('This document has not been copied to the online workspace',404);
  const key=validateKey(path.slice(PREFIX.length)),ref=remote.doc(`harbor_files/${key}`),doc=await ref.get();
  if(!doc.exists)throw new Fault('The uploaded file is unavailable',404);
  const manifest=doc.data() as FileManifest;

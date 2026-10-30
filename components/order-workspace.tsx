@@ -1,4 +1,5 @@
 import {CustomerContact} from './customer-orders';
+import {customerDisplayName} from '@/lib/customer-display';
 import {ORDER_STEPS} from '@/lib/order-steps';
 import {ReceiveOrder} from './receive-order';
 import Link from 'next/link';
@@ -17,10 +18,10 @@ export function OrderWorkspace({store:s,user:u,id,selectedContainer}:{store:Stor
  const steps=ORDER_STEPS;
  return <div className="order-workspace" id={'order-'+id}>
   <section className="panel prose">
-   <div className="section-heading"><div><span className="eyebrow">ORDER WORKSPACE</span><h2>{o.display_name}</h2></div><span className="badge">{displayValue(o.status)}</span></div>
-   <p>{o.party} · {o.warehouse} → {o.destination}</p><p className="muted">Reference: {o.ref} · Needed by {date(o.due)} · {displayValue(o.direction)}</p>
+   <div className="section-heading"><div><h2>{o.display_name}</h2></div><span className="badge">{displayValue(o.status)}</span></div>
+   <p>{customerDisplayName(o.party)} · {o.warehouse} → {o.destination}</p><p className="muted">Reference: {o.ref} · Needed by {date(o.due)} · {displayValue(o.direction)}</p>
    <div className="action-bar">{u.role==='manager'&&act('delete-order','Delete order',{order_id:id})}{shipments.filter(sh=>!sh.cancelled).map(sh=><div key={sh.id}>{act('tracking',shipments.length===1?'Update order status':'Update status: '+sh.origin+' → '+sh.destination,{shipment_id:sh.id},{...L,shipments,containers:all.containers.filter((c:Row)=>c.shipment_id===sh.id)})}</div>)}</div>
-   <div className="order-progress-track" role="progressbar" aria-label={o.display_name+' progress'} aria-valuemin={0} aria-valuemax={steps.length-1} aria-valuenow={o.step} aria-valuetext={steps[o.step]}><span style={{width:`${o.step/(steps.length-1)*100}%`}}/></div>
+   <div className="order-progress-track" role="progressbar" aria-label={o.display_name+' progress'} aria-valuemin={0} aria-valuemax={steps.length-1} aria-valuenow={o.step} aria-valuetext={steps[o.step]}><span style={{transform:`scaleX(${o.step/(steps.length-1)})`}}/></div>
    <div className="order-timeline">{steps.map((step,i)=><div className={i<=o.step?'done':''} key={step} aria-current={i===o.step?'step':undefined}><span>{i+1}</span>{step}</div>)}</div>
    {review.unloaded&&o.status!=='Completed'&&<div className="notice"><h3>Waiting to receive</h3><ReceiveOrder key={review.version} orderId={id} version={review.version} csrf={u.csrf} employee={{id:u.id,name:u.name,email:u.email}} blockedReason={review.reason}/></div>}
    {CustomerContact({store:s,orderId:id})}

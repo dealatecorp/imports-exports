@@ -17,7 +17,7 @@ async function handlePOST(req:Request){
  try{
   const u=await user();guard(req,u);
   const cloud=process.env.DATABASE_BACKEND==='firestore',limit=cloud?CLOUD_FILE_LIMIT:10_000_000;
-  const sizeLabel=cloud?'1 MB for the online demo':'10 MB';
+  const sizeLabel=cloud?'1 MB online':'10 MB';
   if(Number(req.headers.get('content-length')||0)>limit+100_000)throw new Fault(`Maximum upload size is ${sizeLabel}`,413);
   const form=await req.formData(),sh=shipment(db(),u,String(form.get('shipment_id'))),file=form.get('file');
   if(!(file instanceof File)||file.size>limit||!file.size)throw new Fault(`Select a file up to ${sizeLabel}`,413);

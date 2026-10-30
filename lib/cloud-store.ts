@@ -26,7 +26,7 @@ export function firestoreBackend(remote:Firestore):CloudBackend{
  return {
   async read(){
    const current=await ref.get();
-   if(!current.exists)throw new Fault('The cloud demo database has not been initialized',503);
+   if(!current.exists)throw new Fault('The cloud database has not been initialized',503);
    return {snapshot:current.get('snapshot'),version:current.get('version')};
   },
   async commit(version,snapshot,writes){
