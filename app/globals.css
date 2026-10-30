@@ -21,3 +21,110 @@
 
 .customer-shell{max-width:1440px;margin:auto;padding:0 32px 40px}.customer-header{display:flex;align-items:center;justify-content:space-between;gap:20px;padding:28px 0}.customer-header nav{display:flex;align-items:center;gap:20px}.customer-summary{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px}.public-hero{display:grid;grid-template-columns:1fr 1.3fr;align-items:center;gap:30px;padding:60px 0}.public-hero h1{font-size:clamp(36px,5vw,68px);line-height:1.08;letter-spacing:-2px}.public-hero p{max-width:480px;line-height:1.8;color:var(--muted);margin:20px 0}.public-hero img{width:100%;min-width:0}.booking-layout{display:grid;grid-template-columns:minmax(0,2fr) minmax(260px,1fr);gap:30px}.booking-item{display:flex;align-items:end;gap:12px;margin-bottom:14px}.booking-item label:first-child{flex:2}.booking-item label{flex:1;min-width:0}.booking-item select{width:100%}.quote-preview,.demo-checkout{padding:22px;background:#f0f2f2;border-radius:12px}.quote-preview dl>div,.demo-checkout dl>div{display:flex;justify-content:space-between;gap:20px;padding:10px 0;border-bottom:1px solid var(--line);font-size:13px}.quote-preview dd,.demo-checkout dd{margin:0;white-space:nowrap}.quote-total{display:block;font-size:30px;margin:20px 0}.customer-order{margin:20px 0}.customer-updates{padding-left:20px}.customer-updates li{margin:14px 0}.customer-updates small,.customer-message small{color:var(--muted);font-size:11px}.customer-contact{margin:22px 0;padding:18px;border:1px solid var(--line);border-radius:12px}.customer-message{border-top:1px solid var(--line);padding:12px 0}.customer-message a{margin:8px 0 0 12px;display:inline-flex}.customer-shell .action-bar{margin-top:18px}.customer-shell label{display:flex;flex-direction:column;gap:7px}.customer-shell input,.customer-shell select{width:100%}@media(max-width:760px){.customer-shell{padding:0 16px 24px}.customer-header{flex-wrap:wrap}.customer-header nav{gap:12px;flex-wrap:wrap;font-size:12px}.public-hero{grid-template-columns:1fr;padding:30px 0;gap:12px}.customer-summary{grid-template-columns:1fr}.booking-layout{grid-template-columns:1fr}.booking-item{flex-wrap:wrap}.booking-item label:first-child{flex-basis:100%}.customer-message a{margin-left:0}.customer-shell .order-timeline{overflow:auto}.customer-shell .quote-preview{padding:16px}}
 .customer-shell .receipt-checkbox{flex-direction:row;align-items:flex-start;margin:16px 0}.customer-shell .receipt-checkbox input{width:18px;flex:none}
+
+/* Motion follows navigation, selection and confirmed data changes. */
+:root{--motion-ease:cubic-bezier(.16,1,.3,1)}
+::selection{background:#ffd9be;color:#202224}
+input,textarea{caret-color:var(--orange)}
+.table-wrap,.cargo-selector,.order-timeline{scrollbar-width:thin;scrollbar-color:#b8bcbd transparent}
+.route-surface{animation:workspace-enter 180ms ease-out}
+.order-detail-reveal{animation:order-change 240ms var(--motion-ease)}
+.primary,.secondary,.icon-button,.row-action,.workspace-jumps a{transition:background-color 150ms,color 150ms,transform 150ms var(--motion-ease)}
+.primary:active:not(:disabled),.secondary:active:not(:disabled),.icon-button:active{transform:scale(.97)}
+button:disabled{cursor:not-allowed}
+.modal[open]{animation:dialog-enter 220ms var(--motion-ease)}
+.modal[open]::backdrop{animation:workspace-enter 180ms ease-out}
+.drawer-backdrop{animation:workspace-enter 150ms ease-out}
+.cargo-selector button{transition:border-color 160ms,background-color 160ms;min-height:60px}
+.cargo-selector button img{transition:transform 260ms var(--motion-ease)}
+.cargo-selector button.selected img{transform:translateX(5px)}
+.cargo-selector button:hover{border-color:#ffb280}
+.cargo-hotspot{transition:transform 180ms var(--motion-ease),background-color 180ms}
+.cargo-hotspot:hover,.cargo-hotspot:focus-visible{transform:scale(1.12);background:#d75400}
+.order-progress-track>span{width:100%;transform-origin:left;transition:transform 550ms var(--motion-ease);animation:progress-enter 650ms var(--motion-ease)}
+.order-timeline>div,.order-timeline span{transition:background-color 240ms,color 240ms}
+.order-timeline [aria-current=step] span{background:#ff6b12;color:#fff}
+.tick-progress i{transition:background-color 280ms}
+.stacked-bar>span{transition:width 450ms var(--motion-ease)}
+.order-container{transition:border-color 160ms,background-color 160ms}
+a.order-container:hover{border-color:#ffac75;background:#fffaf6}
+.metric-number,.mini-stat>strong,.quote-total{font-variant-numeric:tabular-nums}
+@keyframes workspace-enter{from{opacity:.65}to{opacity:1}}
+@keyframes order-change{from{opacity:.55;translate:6px 0}to{opacity:1;translate:0 0}}
+@keyframes dialog-enter{from{opacity:0;transform:translateY(8px) scale(.985)}to{opacity:1;transform:translateY(0) scale(1)}}
+@keyframes progress-enter{from{transform:scaleX(0)}}
+@media(max-width:1100px) and (min-width:641px){.global-search{display:none}.topbar{gap:10px}.top-brand{min-width:120px}}
+@media(max-width:640px){.main-shell{padding-bottom:90px}.cargo-selector{scroll-snap-type:x proximity}.cargo-selector button{scroll-snap-align:start}.cargo-selector button.selected{background:#fff4ec}.cargo-selector button.selected img{transform:none}.sidebar{padding-bottom:env(safe-area-inset-bottom)}}
+@media(prefers-reduced-motion:reduce){.order-detail-reveal{translate:none}.cargo-selector button.selected img,.cargo-hotspot:hover,.cargo-hotspot:focus-visible,.primary:active:not(:disabled),.secondary:active:not(:disabled),.icon-button:active{transform:none}}
+/* Responsive operations overview: keep order details and illustration in normal flow. */
+.overview-heading h1{font-size:26px;letter-spacing:-.7px;margin-bottom:6px}
+.cargo-stage{display:grid;grid-template-columns:minmax(200px,.8fr) minmax(0,1.8fr);align-items:center;gap:16px}
+.floating-container{position:static;width:auto;padding:20px;background:var(--panel);backdrop-filter:none;box-shadow:none;border:0}
+.floating-container>small,.floating-container dt{color:#626a70;font-size:11px}
+.floating-container h3{font-size:20px;margin:6px 0 16px}
+.floating-container dl>div{gap:12px;padding:10px 0;align-items:start}
+.floating-container dd{font-size:12px;overflow-wrap:anywhere}
+.container-thumbnail{display:none}
+.truck-visual{position:relative;height:auto;min-height:230px;padding:20px 0 30px;overflow:hidden}
+.truck-visual>img{width:100%;max-width:100%;margin:0}
+.cargo-hotspot{width:44px;height:44px;top:38%;left:48%}
+.cargo-selector,.cargo-bottom-metrics{grid-column:1/-1;min-width:0}
+.cargo-selector{grid-template-columns:repeat(auto-fit,minmax(160px,1fr));margin-top:0}
+.cargo-selector button{min-width:0;padding:12px;min-height:66px}
+.cargo-selector strong{font-size:12px;white-space:normal}
+.cargo-selector small{font-size:11px;white-space:normal;color:#626a70;line-height:1.5}
+.cargo-selector img{display:none}
+.cargo-side{min-width:0}
+.cargo-side h2{font-size:16px}
+.shipment-info>.item-summary{padding:0}
+.customer-orders-panel{margin-top:24px}
+.customer-orders-panel td{white-space:normal;overflow-wrap:anywhere}
+.customer-orders-panel td:nth-child(4){min-width:180px;max-width:320px}
+.customer-orders-panel td:last-child{min-width:190px}
+.customer-orders-panel .section-heading{gap:16px}
+.customer-orders-panel .section-heading>.secondary{flex-shrink:0}
+@media(max-width:1100px){
+ .overview-heading{flex-wrap:wrap;gap:18px}.overview-heading .filters{width:100%}
+ .cargo-focus{grid-template-columns:1fr}.cargo-side{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+ .cargo-stage{grid-template-columns:minmax(200px,.8fr) minmax(0,1.8fr)}
+}
+@media(max-width:640px){
+ .overview-heading{display:block}.overview-heading h1{font-size:25px;letter-spacing:-.6px}
+ .overview-heading p{display:block;font-size:13px;line-height:1.6;color:#626a70;margin:0 0 16px}
+ .overview-heading .filters{display:flex;gap:10px}
+ .overview-heading .filters>select{flex:1 0 100%;width:100%;max-width:none}
+ .overview-heading .date-filter{flex:1;min-width:0;font-size:12px}
+ .overview-heading .filters input[type=date]{width:100%;font-size:16px}
+ .overview-heading .filters .secondary{min-height:44px;font-size:13px;flex:1}
+ .overview-heading .filters .text-button{display:inline-flex;min-height:44px;font-size:13px}
+ .metric{padding:14px 12px;min-height:112px}.metric-icon{display:none}
+ .metric-top{padding:0;font-size:12px;white-space:normal;color:#626a70}
+ .metric-number{padding:0;font-size:30px;margin:5px 0}
+ .metric>small{display:block;padding:0;font-size:11px;color:#626a70;line-height:1.4}
+ .cargo-stage{display:flex;flex-direction:column;align-items:stretch;gap:14px;padding:16px}
+ .floating-container{padding:0}.floating-heading{font-size:13px;margin-bottom:14px}
+ .floating-heading a{display:grid;place-items:center;min-width:44px;min-height:44px;margin:-10px -6px -10px auto}
+ .floating-container dl{order:initial;margin:0}.floating-container dt,.floating-container dd{font-size:12px}
+ .floating-container h3{font-size:22px}.truck-visual{position:relative;inset:auto;min-height:0;height:auto;padding:6px 0 22px}
+ .cargo-hotspot{width:44px;height:44px}.cargo-hotspot svg{width:20px}
+ .illustration-label{font-size:9px;bottom:0}
+ .cargo-selector{margin:0;gap:10px;padding:4px 2px 8px}.cargo-selector button{flex:0 0 65%;min-height:76px}
+ .cargo-bottom-metrics{display:grid;grid-template-columns:1fr 1fr;margin:0}
+ .cargo-bottom-metrics .route-progress{grid-column:1/-1}.cargo-bottom-metrics .panel{padding:14px}
+ .cargo-side{display:grid;grid-template-columns:1fr;gap:0}.cargo-side .panel{padding:18px}
+ .cargo-side p,.order-route p{font-size:13px}.cargo-side .primary{min-height:44px;font-size:13px}
+ .section-heading,.panel-heading{flex-wrap:wrap;gap:12px}.selected-container-orders .secondary{min-height:44px}
+ .customer-orders-panel .section-heading>.secondary{width:100%;min-height:44px;font-size:13px}
+ .customer-orders-panel .table-wrap{max-width:100%;overflow:visible}
+ .customer-orders-panel table,.customer-orders-panel tbody{display:block;white-space:normal}
+ .customer-orders-panel thead{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%)}
+ .customer-orders-panel tr{display:block;padding:16px 0;border-top:1px solid var(--line)}
+ .customer-orders-panel td,.customer-orders-panel td:nth-child(4),.customer-orders-panel td:last-child{display:grid;grid-template-columns:105px minmax(0,1fr);gap:12px;padding:7px 0;border:0;min-width:0;max-width:none;font-size:13px}
+ .customer-orders-panel td::before{content:attr(data-label);font-size:12px;font-weight:500;color:#626a70}
+ .customer-orders-panel td .secondary{min-height:44px;font-size:12px}.customer-orders-panel td br{display:none}
+ .main-shell main,.route-surface,.panel,.detail-grid>*{min-width:0}
+ input,select,textarea{font-size:16px}.primary,.secondary,.icon-button{min-height:44px}.icon-button{min-width:44px}
+ .mobile-greeting{left:72px;max-width:calc(100vw - 175px);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+ .booking-item{display:grid;grid-template-columns:1fr 1fr;align-items:end}.booking-item label:first-child{grid-column:1/-1}
+ .booking-item>button{min-height:44px}.report-grid{grid-template-columns:1fr}
+}

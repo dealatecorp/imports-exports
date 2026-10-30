@@ -1,0 +1,27 @@
+.number {
+  display: inline-block;
+  position: relative;
+  vertical-align: baseline;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+
+.sizer {
+  visibility: hidden;
+}
+
+.visual {
+  position: absolute;
+  inset: 0;
+  text-align: inherit;
+}
+
+.accessible {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
